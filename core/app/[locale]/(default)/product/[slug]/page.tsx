@@ -206,10 +206,22 @@ export default async function Product({ params, searchParams }: Props) {
 
     return {
       images: product.defaultImage
-        ? [{ src: product.defaultImage.url, alt: product.defaultImage.altText }, ...images]
+        ? [
+            {
+              src: product.defaultImage.url,
+              alt: product.defaultImage.altText,
+            },
+            ...images,
+          ]
         : images,
       pageInfo: product.images.pageInfo,
     };
+  });
+
+  const streamableMultimediaProductImages = Streamable.from(async () => {
+    const { images } = await streamableImages;
+
+    return images;
   });
 
   const streameableCtaLabel = Streamable.from(async () => {
@@ -630,7 +642,11 @@ export default async function Product({ params, searchParams }: Props) {
         />
       </ProductAnalyticsProvider>
 
-      <ProductMultimedia productId={baseProduct.entityId} productName={baseProduct.name} />
+      <ProductMultimedia
+        productId={baseProduct.entityId}
+        productImages={streamableMultimediaProductImages}
+        productName={baseProduct.name}
+      />
 
       <Stream fallback={null} value={streamableLooksGoodTogetherProducts}>
         {(products) =>

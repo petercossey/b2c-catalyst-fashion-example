@@ -1,4 +1,4 @@
-import { Group, Image, List, Select, TextInput } from '@makeswift/runtime/controls';
+import { Group, Image, List, Number, Select, TextInput } from '@makeswift/runtime/controls';
 
 import { runtime } from '~/lib/makeswift/runtime';
 
@@ -16,17 +16,18 @@ runtime.registerComponent(MakeswiftProductMultimedia, {
       type: Group({
         label: 'Media item',
         props: {
-          type: Select({
-            label: 'Type',
+          kind: Select({
+            label: 'Source',
             options: [
-              { label: 'Image', value: 'image' },
+              { label: 'Makeswift image', value: 'makeswift-image' },
               { label: 'Video', value: 'video' },
+              { label: 'Product image', value: 'product-image' },
             ],
-            defaultValue: 'image',
           }),
-          image: Image({ label: 'Image' }),
+          image: Image({ label: 'Makeswift image' }),
+          imageIndex: Number({ label: 'Product image index' }),
           videoUrl: TextInput({ label: 'Video URL', defaultValue: '' }),
-          altText: TextInput({ label: 'Alt text', defaultValue: 'Product multimedia image' }),
+          altText: TextInput({ label: 'Alt text', defaultValue: '' }),
         },
       }),
       getItemLabel: (item) => {
@@ -34,7 +35,17 @@ runtime.registerComponent(MakeswiftProductMultimedia, {
           return 'Media item';
         }
 
-        return item.type === 'video' ? item.videoUrl || 'Video' : item.altText || 'Image';
+        switch (item.kind) {
+          case 'video':
+            return item.videoUrl || 'Video';
+
+          case 'product-image':
+            return item.imageIndex != null ? `Product image ${item.imageIndex}` : 'Product image';
+
+          case 'makeswift-image':
+          default:
+            return item.altText || 'Makeswift image';
+        }
       },
     }),
   },
