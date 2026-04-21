@@ -1,4 +1,4 @@
-import { Image, TextInput } from '@makeswift/runtime/controls';
+import { Group, Image, List, TextInput } from '@makeswift/runtime/controls';
 
 import { runtime } from '~/lib/makeswift/runtime';
 
@@ -11,7 +11,16 @@ runtime.registerComponent(MakeswiftProductMultimedia, {
   label: 'Product Multimedia (private)',
   hidden: true,
   props: {
-    image: Image({ label: 'Image' }),
-    altText: TextInput({ label: 'Alt text', defaultValue: 'Product multimedia image' }),
+    items: List({
+      label: 'Images',
+      type: Group({
+        label: 'Image',
+        props: {
+          image: Image({ label: 'Image' }),
+          altText: TextInput({ label: 'Alt text', defaultValue: 'Product multimedia image' }),
+        },
+      }),
+      getItemLabel: (item) => item?.altText || 'Image',
+    }),
   },
 });
