@@ -153,9 +153,10 @@ function ProductMultimediaContent({
         if (mediaItems.length === 0) return null;
 
         return (
-          <section className="flex flex-col gap-6">
+          <section className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
             {mediaItems.map((item, index) => (
               <div
+                className="overflow-hidden rounded-xl bg-[hsl(var(--contrast-100))]"
                 key={
                   item.kind === 'video'
                     ? `${item.kind}-${item.videoUrl}`
@@ -164,14 +165,19 @@ function ProductMultimediaContent({
               >
                 {item.kind === 'video' ? (
                   // eslint-disable-next-line jsx-a11y/media-has-caption
-                  <video className="h-auto w-full" controls preload="metadata" src={item.videoUrl} />
+                  <video
+                    className="aspect-[4/5] h-full w-full object-cover"
+                    controls
+                    preload="metadata"
+                    src={item.videoUrl}
+                  />
                 ) : (
                   <Image
                     alt={item.altText}
-                    className="h-auto w-full"
+                    className="aspect-[4/5] h-full w-full object-cover"
                     height={800}
                     loading={index === 0 ? 'eager' : undefined}
-                    sizes="100vw"
+                    sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw"
                     src={item.src}
                     width={1200}
                   />
