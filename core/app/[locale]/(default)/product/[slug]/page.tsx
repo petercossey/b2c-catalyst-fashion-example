@@ -13,6 +13,7 @@ import { productOptionsTransformer } from '~/data-transformers/product-options-t
 import { getPreferredCurrencyCode } from '~/lib/currency';
 import { getMakeswiftPageMetadata } from '~/lib/makeswift';
 import { ProductDetail } from '~/lib/makeswift/components/product-detail';
+import { ProductMultimedia } from '~/lib/makeswift/components/product-multimedia';
 import { getRecaptchaSiteKey } from '~/lib/recaptcha';
 import { getMetadataAlternates } from '~/lib/seo/canonical';
 
@@ -628,6 +629,8 @@ export default async function Product({ params, searchParams }: Props) {
           user={streamableUser}
         />
       </ProductAnalyticsProvider>
+
+      <ProductMultimedia productId={baseProduct.entityId} productName={baseProduct.name} />
 
       <Stream fallback={null} value={streamableLooksGoodTogetherProducts}>
         {(products) =>
