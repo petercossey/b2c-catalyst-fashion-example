@@ -26,6 +26,8 @@ import { Reviews } from './_components/reviews';
 import { WishlistButton } from './_components/wishlist-button';
 import { WishlistButtonForm } from './_components/wishlist-button/form';
 import {
+  getLooksGoodTogetherGroup,
+  getLooksGoodTogetherProducts,
   getProduct,
   getProductPageMetadata,
   getProductPricingAndRelatedProducts,
@@ -506,6 +508,36 @@ export default async function Product({ params, searchParams }: Props) {
     return productCardTransformer(relatedProducts, format);
   });
 
+  const streamableLooksGoodTogetherProducts = Streamable.from(async () => {
+    const rootCategoryId = Number(process.env.BIGCOMMERCE_LOOKS_GOOD_TOGETHER_ROOT_CATEGORY_ID);
+
+    if (!rootCategoryId) {
+      return [];
+    }
+
+    const matchedGroup = await getLooksGoodTogetherGroup(
+      productId,
+      rootCategoryId,
+      customerAccessToken,
+    );
+
+    if (!matchedGroup) {
+      return [];
+    }
+
+    const currencyCode = await getPreferredCurrencyCode();
+    const products = await getLooksGoodTogetherProducts(
+      matchedGroup.entityId,
+      currencyCode,
+      customerAccessToken,
+    );
+
+    return productCardTransformer(
+      products.filter((product) => product.entityId !== productId).slice(0, 8),
+      format,
+    );
+  });
+
   const streamableMinQuantity = Streamable.from(async () => {
     const product = await streamableProduct;
 
@@ -596,6 +628,14 @@ export default async function Product({ params, searchParams }: Props) {
           user={streamableUser}
         />
       </ProductAnalyticsProvider>
+
+      <Stream fallback={null} value={streamableLooksGoodTogetherProducts}>
+        {(products) =>
+          products.length > 0 ? (
+            <FeaturedProductCarousel products={products} title="Looks good together" />
+          ) : null
+        }
+      </Stream>
 
       <FeaturedProductCarousel
         cta={{ label: t('RelatedProducts.cta'), href: '/shop-all' }}
