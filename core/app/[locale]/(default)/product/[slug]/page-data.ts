@@ -1,3 +1,4 @@
+import { removeEdgesAndNodes } from '@bigcommerce/catalyst-client';
 import { cache } from 'react';
 
 import { client } from '~/client';
@@ -376,6 +377,93 @@ export const getStreamableProductInventory = cache(
     });
 
     return data.site.product;
+  },
+);
+
+const LooksGoodTogetherGroupQuery = graphql(`
+  query LooksGoodTogetherGroupQuery($productId: Int!, $rootCategoryId: Int!) {
+    site {
+      product(entityId: $productId) {
+        entityId
+        categories(first: 50) {
+          edges {
+            node {
+              entityId
+              name
+              path
+            }
+          }
+        }
+      }
+      categoryTree(rootEntityId: $rootCategoryId) {
+        entityId
+        children {
+          entityId
+          name
+          path
+        }
+      }
+    }
+  }
+`);
+
+export const getLooksGoodTogetherGroup = cache(
+  async (productId: number, rootCategoryId: number, customerAccessToken?: string) => {
+    const { data } = await client.fetch({
+      document: LooksGoodTogetherGroupQuery,
+      variables: { productId, rootCategoryId },
+      customerAccessToken,
+      fetchOptions: customerAccessToken ? { cache: 'no-store' } : { next: { revalidate } },
+    });
+
+    const productCategoryIds = new Set(
+      removeEdgesAndNodes(data.site.product?.categories ?? { edges: [] }).map(
+        (category) => category.entityId,
+      ),
+    );
+    const directChildren = data.site.categoryTree[0]?.children ?? [];
+
+    return directChildren.find((category) => productCategoryIds.has(category.entityId)) ?? null;
+  },
+);
+
+const LooksGoodTogetherProductsQuery = graphql(
+  `
+    query LooksGoodTogetherProductsQuery($categoryId: Int!, $currencyCode: currencyCode) {
+      site {
+        category(entityId: $categoryId) {
+          entityId
+          name
+          products(first: 9) {
+            edges {
+              node {
+                ...FeaturedProductsCarouselFragment
+              }
+            }
+          }
+        }
+      }
+    }
+  `,
+  [FeaturedProductsCarouselFragment],
+);
+
+type LooksGoodTogetherProductsVariables = VariablesOf<typeof LooksGoodTogetherProductsQuery>;
+
+export const getLooksGoodTogetherProducts = cache(
+  async (
+    categoryId: number,
+    currencyCode?: LooksGoodTogetherProductsVariables['currencyCode'],
+    customerAccessToken?: string,
+  ) => {
+    const { data } = await client.fetch({
+      document: LooksGoodTogetherProductsQuery,
+      variables: { categoryId, currencyCode },
+      customerAccessToken,
+      fetchOptions: customerAccessToken ? { cache: 'no-store' } : { next: { revalidate } },
+    });
+
+    return removeEdgesAndNodes(data.site.category?.products ?? { edges: [] });
   },
 );
 
