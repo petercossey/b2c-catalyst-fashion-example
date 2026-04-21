@@ -13,6 +13,7 @@ import { productOptionsTransformer } from '~/data-transformers/product-options-t
 import { getPreferredCurrencyCode } from '~/lib/currency';
 import { getMakeswiftPageMetadata } from '~/lib/makeswift';
 import { ProductDetail } from '~/lib/makeswift/components/product-detail';
+import { ProductMultimedia } from '~/lib/makeswift/components/product-multimedia';
 import { getRecaptchaSiteKey } from '~/lib/recaptcha';
 import { getMetadataAlternates } from '~/lib/seo/canonical';
 
@@ -205,10 +206,22 @@ export default async function Product({ params, searchParams }: Props) {
 
     return {
       images: product.defaultImage
-        ? [{ src: product.defaultImage.url, alt: product.defaultImage.altText }, ...images]
+        ? [
+            {
+              src: product.defaultImage.url,
+              alt: product.defaultImage.altText,
+            },
+            ...images,
+          ]
         : images,
       pageInfo: product.images.pageInfo,
     };
+  });
+
+  const streamableMultimediaProductImages = Streamable.from(async () => {
+    const { images } = await streamableImages;
+
+    return images;
   });
 
   const streameableCtaLabel = Streamable.from(async () => {
@@ -628,6 +641,12 @@ export default async function Product({ params, searchParams }: Props) {
           user={streamableUser}
         />
       </ProductAnalyticsProvider>
+
+      <ProductMultimedia
+        productId={baseProduct.entityId}
+        productImages={streamableMultimediaProductImages}
+        productName={baseProduct.name}
+      />
 
       <Stream fallback={null} value={streamableLooksGoodTogetherProducts}>
         {(products) =>
