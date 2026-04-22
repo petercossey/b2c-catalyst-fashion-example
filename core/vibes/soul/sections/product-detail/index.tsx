@@ -1,6 +1,10 @@
 import { ReactNode } from 'react';
 
 import { Stream, Streamable } from '@/vibes/soul/lib/streamable';
+import {
+  ProductVariantsInventory,
+  ProductVariantInventoryListItem,
+} from '~/components/product-variants-inventory';
 import { Accordion, AccordionItem } from '@/vibes/soul/primitives/accordion';
 import { AnimatedUnderline } from '@/vibes/soul/primitives/animated-underline';
 import { Price, PriceLabel } from '@/vibes/soul/primitives/price-label';
@@ -48,6 +52,7 @@ interface ProductDetailProduct {
   maxQuantity?: Streamable<number | null>;
   stockDisplayData?: Streamable<StockDisplayData | null>;
   backorderDisplayData?: Streamable<BackorderDisplayData | null>;
+  variantInventoryList?: Streamable<ProductVariantInventoryListItem[]>;
 }
 
 export interface ProductDetailProps<F extends Field> {
@@ -267,6 +272,15 @@ export function ProductDetail<F extends Field>({
                       )}
                     </Stream>
                   </div>
+                  {product.variantInventoryList && (
+                    <div className="group/product-variants-inventory">
+                      <Stream fallback={null} value={product.variantInventoryList}>
+                        {(variantInventoryList) => (
+                          <ProductVariantsInventory items={variantInventoryList} />
+                        )}
+                      </Stream>
+                    </div>
+                  )}
                   <div className="group/product-description">
                     <Stream fallback={<ProductDescriptionSkeleton />} value={product.description}>
                       {(description) =>

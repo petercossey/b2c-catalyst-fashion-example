@@ -6,6 +6,7 @@ import { SearchParams } from 'nuqs/server';
 
 import { Stream, Streamable } from '@/vibes/soul/lib/streamable';
 import { FeaturedProductCarousel } from '@/vibes/soul/sections/featured-product-carousel';
+import { ProductVariantInventoryListItem } from '~/components/product-variants-inventory';
 import { auth, getSessionCustomerAccessToken } from '~/auth';
 import { pricesTransformer } from '~/data-transformers/prices-transformer';
 import { productCardTransformer } from '~/data-transformers/product-card-transformer';
@@ -36,6 +37,7 @@ import {
   getStreamableProduct,
   getStreamableProductInventory,
   getStreamableProductVariantInventory,
+  getStreamableProductVariantsInventoryList,
 } from './page-data';
 
 interface Props {
@@ -158,6 +160,35 @@ export default async function Product({ params, searchParams }: Props) {
     }
 
     return removeEdgesAndNodes(variants).find((v) => v.sku === product.sku);
+  });
+
+  const streamableProductVariantsInventoryList = Streamable.from<
+    ProductVariantInventoryListItem[]
+  >(async () => {
+    const variables = {
+      entityId: Number(productId),
+    };
+
+    const variants = await getStreamableProductVariantsInventoryList(variables, customerAccessToken);
+
+    if (!variants) {
+      return [];
+    }
+
+    return removeEdgesAndNodes(variants).map((variant) => ({
+      entityId: variant.entityId,
+      sku: variant.sku,
+      inventoryAvailable: variant.inventory?.aggregated?.availableToSell ?? null,
+      isInStock: variant.inventory?.isInStock ?? false,
+      optionValues: removeEdgesAndNodes(variant.options).flatMap((option) =>
+        removeEdgesAndNodes(option.values).map((value) => ({
+          optionEntityId: option.entityId,
+          optionLabel: option.displayName,
+          valueEntityId: value.entityId,
+          valueLabel: value.label,
+        })),
+      ),
+    }));
   });
 
   const streamableProductPricingAndRelatedProducts = Streamable.from(async () => {
@@ -632,6 +663,7 @@ export default async function Product({ params, searchParams }: Props) {
             maxQuantity: streamableMaxQuantity,
             stockDisplayData: streamableStockDisplayData,
             backorderDisplayData: streamableBackorderDisplayData,
+            variantInventoryList: streamableProductVariantsInventoryList,
           }}
           productId={baseProduct.entityId}
           quantityLabel={t('ProductDetails.quantity')}

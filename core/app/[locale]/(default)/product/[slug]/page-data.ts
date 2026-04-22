@@ -7,6 +7,7 @@ import { graphql, VariablesOf } from '~/client/graphql';
 import { revalidate } from '~/client/revalidate-target';
 import { FeaturedProductsCarouselFragment } from '~/components/featured-products-carousel/fragment';
 import { ProductVariantsInventoryFragment } from '~/components/product-variants-inventory/fragment';
+import { ProductVariantsInventoryListFragment } from '~/components/product-variants-inventory/list-fragment';
 
 import { ProductSchemaFragment } from './_components/product-schema/fragment';
 import { ProductViewedFragment } from './_components/product-viewed/fragment';
@@ -377,6 +378,35 @@ export const getStreamableProductInventory = cache(
     });
 
     return data.site.product;
+  },
+);
+
+const StreamableProductVariantsInventoryListQuery = graphql(
+  `
+    query StreamableProductVariantsInventoryListQuery($entityId: Int!) {
+      site {
+        product(entityId: $entityId) {
+          ...ProductVariantsInventoryListFragment
+        }
+      }
+    }
+  `,
+  [ProductVariantsInventoryListFragment],
+);
+
+type ProductVariantsInventoryListVariables =
+  VariablesOf<typeof StreamableProductVariantsInventoryListQuery>;
+
+export const getStreamableProductVariantsInventoryList = cache(
+  async (variables: ProductVariantsInventoryListVariables, customerAccessToken?: string) => {
+    const { data } = await client.fetch({
+      document: StreamableProductVariantsInventoryListQuery,
+      variables,
+      customerAccessToken,
+      fetchOptions: customerAccessToken ? { cache: 'no-store' } : { next: { revalidate: 60 } },
+    });
+
+    return data.site.product?.variants;
   },
 );
 
