@@ -89,6 +89,8 @@ export const productOptionsTransformer = async (
               options: values.map((value) => ({
                 label: value.label,
                 value: value.entityId.toString(),
+                optionEntityId: option.entityId.toString(),
+                valueEntityId: value.entityId.toString(),
               })),
             };
           }

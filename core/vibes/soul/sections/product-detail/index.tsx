@@ -1,10 +1,6 @@
 import { ReactNode } from 'react';
 
 import { Stream, Streamable } from '@/vibes/soul/lib/streamable';
-import {
-  ProductVariantsInventory,
-  ProductVariantInventoryListItem,
-} from '~/components/product-variants-inventory';
 import { Accordion, AccordionItem } from '@/vibes/soul/primitives/accordion';
 import { AnimatedUnderline } from '@/vibes/soul/primitives/animated-underline';
 import { Price, PriceLabel } from '@/vibes/soul/primitives/price-label';
@@ -15,6 +11,7 @@ import {
   ProductGalleryLoadMoreAction,
 } from '@/vibes/soul/sections/product-detail/product-gallery';
 import { ReviewForm, SubmitReviewAction } from '@/vibes/soul/sections/reviews/review-form';
+import { ProductVariantInventoryListItem } from '~/components/product-variants-inventory';
 
 import {
   BackorderDisplayData,
@@ -241,6 +238,7 @@ export function ProductDetail<F extends Field>({
                         product.maxQuantity,
                         product.stockDisplayData,
                         product.backorderDisplayData,
+                        product.variantInventoryList,
                       ])}
                     >
                       {([
@@ -251,6 +249,7 @@ export function ProductDetail<F extends Field>({
                         maxQuantity,
                         stockDisplayData,
                         backorderDisplayData,
+                        variantInventoryList,
                       ]) => (
                         <ProductDetailForm
                           action={action}
@@ -268,19 +267,11 @@ export function ProductDetail<F extends Field>({
                           productId={product.id}
                           quantityLabel={quantityLabel}
                           stockDisplayData={stockDisplayData ?? undefined}
+                          variantInventoryList={variantInventoryList ?? undefined}
                         />
                       )}
                     </Stream>
                   </div>
-                  {product.variantInventoryList && (
-                    <div className="group/product-variants-inventory">
-                      <Stream fallback={null} value={product.variantInventoryList}>
-                        {(variantInventoryList) => (
-                          <ProductVariantsInventory items={variantInventoryList} />
-                        )}
-                      </Stream>
-                    </div>
-                  )}
                   <div className="group/product-description">
                     <Stream fallback={<ProductDescriptionSkeleton />} value={product.description}>
                       {(description) =>

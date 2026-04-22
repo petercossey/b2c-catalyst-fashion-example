@@ -8,6 +8,13 @@ interface FormField {
   persist?: boolean;
 }
 
+export interface SelectFieldOption {
+  label: string;
+  value: string;
+  optionEntityId?: string;
+  valueEntityId?: string;
+}
+
 type RadioField = {
   type: 'radio-group';
   options: Array<{ label: string; value: string }>;
@@ -16,7 +23,7 @@ type RadioField = {
 
 type SelectField = {
   type: 'select';
-  options: Array<{ label: string; value: string }>;
+  options: SelectFieldOption[];
   defaultValue?: string;
 } & FormField;
 

@@ -31,10 +31,11 @@ import { Textarea } from '@/vibes/soul/form/textarea';
 import { Button } from '@/vibes/soul/primitives/button';
 import { toast } from '@/vibes/soul/primitives/toaster';
 import { useEvents } from '~/components/analytics/events';
+import { ProductVariantInventoryListItem } from '~/components/product-variants-inventory';
 import { usePathname, useRouter } from '~/i18n/routing';
 
 import { revalidateCart } from './actions/revalidate-cart';
-import { Field, schema, SchemaRawShape } from './schema';
+import { Field, schema, SchemaRawShape, SelectFieldOption } from './schema';
 
 type Action<S, P> = (state: Awaited<S>, payload: P) => S | Promise<S>;
 
@@ -75,7 +76,47 @@ export interface ProductDetailFormProps<F extends Field> {
   maxQuantity?: number;
   stockDisplayData?: StockDisplayData;
   backorderDisplayData?: BackorderDisplayData;
+  variantInventoryList?: ProductVariantInventoryListItem[];
 }
+
+type VariantChoiceField = Extract<
+  Field,
+  {
+    type:
+      | 'select'
+      | 'radio-group'
+      | 'swatch-radio-group'
+      | 'card-radio-group'
+      | 'button-radio-group';
+  }
+>;
+
+const getVariantInventoryLabel = (variant: ProductVariantInventoryListItem) => {
+  if (!variant.isInStock) {
+    return 'Out of stock';
+  }
+
+  if (variant.inventoryAvailable == null) {
+    return 'N/A';
+  }
+
+  return `${variant.inventoryAvailable} available`;
+};
+
+const getVariantSignature = (
+  optionValues: Array<{ optionEntityId: number; valueEntityId: number }>,
+) =>
+  optionValues
+    .map(({ optionEntityId, valueEntityId }) => `${optionEntityId}:${valueEntityId}`)
+    .sort()
+    .join('|');
+
+const isVariantChoiceField = (field: Field): field is VariantChoiceField =>
+  field.type === 'select' ||
+  field.type === 'radio-group' ||
+  field.type === 'swatch-radio-group' ||
+  field.type === 'card-radio-group' ||
+  field.type === 'button-radio-group';
 
 export function ProductDetailForm<F extends Field>({
   action,
@@ -93,6 +134,7 @@ export function ProductDetailForm<F extends Field>({
   maxQuantity,
   stockDisplayData,
   backorderDisplayData,
+  variantInventoryList,
 }: ProductDetailFormProps<F>) {
   const router = useRouter();
   const pathname = usePathname();
@@ -229,6 +271,35 @@ export function ProductDetailForm<F extends Field>({
 
   const quantityControl = useInputControl(formFields.quantity);
 
+  const variantsBySignature = useMemo(
+    () =>
+      new Map(
+        (variantInventoryList ?? []).map((variant) => [
+          getVariantSignature(variant.optionValues),
+          variant,
+        ]),
+      ),
+    [variantInventoryList],
+  );
+
+  const selectedVariantOptionValues = useMemo(() => {
+    return fields.reduce<Record<string, string>>((acc, field) => {
+      if (!isVariantChoiceField(field)) {
+        return acc;
+      }
+
+      const value = formFields[field.name]?.value;
+
+      if (typeof value !== 'string' || value === '') {
+        return acc;
+      }
+
+      acc[field.name] = value;
+
+      return acc;
+    }, {});
+  }, [fields, formFields]);
+
   return (
     <FormProvider context={form.context}>
       <FormStateInput />
@@ -245,6 +316,8 @@ export function ProductDetailForm<F extends Field>({
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 key={formFields[field.name]!.id}
                 onPrefetch={onPrefetch}
+                selectedVariantOptionValues={selectedVariantOptionValues}
+                variantsBySignature={variantsBySignature}
               />
             );
           })}
@@ -344,11 +417,15 @@ function FormField({
   formField,
   onPrefetch,
   emptySelectPlaceholder,
+  selectedVariantOptionValues,
+  variantsBySignature,
 }: {
   field: Field;
   formField: FieldMetadata<string | number | boolean | Date | undefined>;
   onPrefetch: (fieldName: string, value: string) => void;
   emptySelectPlaceholder?: string;
+  selectedVariantOptionValues: Record<string, string>;
+  variantsBySignature: Map<string, ProductVariantInventoryListItem>;
 }) {
   const controls = useInputControl(formField);
 
@@ -375,6 +452,38 @@ function FormField({
       onPrefetch(field.name, value);
     }
   };
+
+  const selectOptions =
+    field.type === 'select'
+      ? field.options.map((option) => {
+          if (!option.optionEntityId || !option.valueEntityId) {
+            return option;
+          }
+
+          const candidateSelections = {
+            ...selectedVariantOptionValues,
+            [option.optionEntityId]: option.valueEntityId,
+          };
+
+          const variant = variantsBySignature.get(
+            getVariantSignature(
+              Object.entries(candidateSelections).map(([optionEntityId, valueEntityId]) => ({
+                optionEntityId: Number(optionEntityId),
+                valueEntityId: Number(valueEntityId),
+              })),
+            ),
+          );
+
+          if (!variant) {
+            return option;
+          }
+
+          return {
+            ...option,
+            label: `${option.label} (${getVariantInventoryLabel(variant)})`,
+          } satisfies SelectFieldOption;
+        })
+      : undefined;
 
   switch (field.type) {
     case 'number':
@@ -468,7 +577,7 @@ function FormField({
           onFocus={controls.focus}
           onOptionMouseEnter={handleOnOptionMouseEnter}
           onValueChange={handleChange}
-          options={field.options}
+          options={selectOptions ?? field.options}
           placeholder={emptySelectPlaceholder}
           required={formField.required}
           value={controls.value ?? ''}
