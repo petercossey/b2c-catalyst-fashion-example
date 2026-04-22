@@ -11,6 +11,7 @@ import {
   ProductGalleryLoadMoreAction,
 } from '@/vibes/soul/sections/product-detail/product-gallery';
 import { ReviewForm, SubmitReviewAction } from '@/vibes/soul/sections/reviews/review-form';
+import { ProductVariantInventoryListItem } from '~/components/product-variants-inventory';
 
 import {
   BackorderDisplayData,
@@ -48,6 +49,7 @@ interface ProductDetailProduct {
   maxQuantity?: Streamable<number | null>;
   stockDisplayData?: Streamable<StockDisplayData | null>;
   backorderDisplayData?: Streamable<BackorderDisplayData | null>;
+  variantInventoryList?: Streamable<ProductVariantInventoryListItem[]>;
 }
 
 export interface ProductDetailProps<F extends Field> {
@@ -236,6 +238,7 @@ export function ProductDetail<F extends Field>({
                         product.maxQuantity,
                         product.stockDisplayData,
                         product.backorderDisplayData,
+                        product.variantInventoryList,
                       ])}
                     >
                       {([
@@ -246,6 +249,7 @@ export function ProductDetail<F extends Field>({
                         maxQuantity,
                         stockDisplayData,
                         backorderDisplayData,
+                        variantInventoryList,
                       ]) => (
                         <ProductDetailForm
                           action={action}
@@ -263,6 +267,7 @@ export function ProductDetail<F extends Field>({
                           productId={product.id}
                           quantityLabel={quantityLabel}
                           stockDisplayData={stockDisplayData ?? undefined}
+                          variantInventoryList={variantInventoryList ?? undefined}
                         />
                       )}
                     </Stream>
